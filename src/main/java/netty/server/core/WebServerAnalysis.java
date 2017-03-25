@@ -35,21 +35,20 @@ class WebServerAnalysis {
 		{
 			// 遍历入参
 			for (int i = 0; i < params.length; i++) {
-				final String className = params[i].getName();
-				if (className.equals("io.netty.channel.ChannelHandlerContext")) {
+				if (params[i] == ChannelHandlerContext.class) {
 					// 入参类型是ChannelHandlerContext
 					args[i] = ctx;
-				} else if (className.equals("io.netty.handler.codec.http.FullHttpRequest")
-						|| className.equals("io.netty.handler.codec.http.HttpRequest")
-						|| className.equals("io.netty.handler.codec.http.HttpMessage")
-						|| className.equals("io.netty.handler.codec.http.HttpObject")) {
+				} else if (params[i] == FullHttpRequest.class
+						|| params[i] == HttpRequest.class
+						|| params[i] == HttpMessage.class
+						|| params[i] == HttpObject.class) {
 					// 入参类型是FullHttpRequest
 					args[i] = request;
-				} else if (className.equals("java.lang.String")) {
+				} else if (params[i] == String.class) {
 					// 入参类型是String
 					final List<String> list = query_param.get(mapping.names[i]);
 					args[i] = WebServerUtil.listToString(list);
-				} else if (className.equals("java.io.File")) {
+				} else if (params[i] == File.class) {
 					// 入参类型是File
 					final File file = WebServerUtil.readFile(ctx, request, mapping.names[i]);
 					if (file != null) {
