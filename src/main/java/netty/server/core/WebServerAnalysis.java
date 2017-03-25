@@ -100,6 +100,8 @@ class WebServerAnalysis {
 	
 				if (!HttpUtil.isKeepAlive(request))
 					lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+				
+				raf.close();
 			} else if (resultType == void.class) {
 				// 没有出参
 				fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
