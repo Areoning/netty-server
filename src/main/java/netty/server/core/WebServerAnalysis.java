@@ -102,11 +102,7 @@ class WebServerAnalysis {
 					lastContentFuture.addListener(ChannelFutureListener.CLOSE);
 				
 				raf.close();
-			} else if (resultType == void.class) {
-				// 没有出参
-				fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
-				ctx.writeAndFlush(fullResponse).addListener(ChannelFutureListener.CLOSE);
-			} else {
+			} else if (resultType != void.class) {
 				// 出参类型是文件外的其他类型
 				final Object result = mapping.method.invoke(mapping.clazz.newInstance(), args);
 				
@@ -115,7 +111,9 @@ class WebServerAnalysis {
 					fullResponse.content().writeBytes(buffer);
 					buffer.release();
 				}
-	
+			}
+			if (resultType != File.class) {
+				// 不是文件，以文本形式输出
 				fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
 				ctx.writeAndFlush(fullResponse).addListener(ChannelFutureListener.CLOSE);
 			}
