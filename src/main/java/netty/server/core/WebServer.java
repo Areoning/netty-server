@@ -16,8 +16,6 @@ import static netty.server.annotation.type.HttpMethod.*;
  */
 public final class WebServer {
 
-	private static final String BASE_PACKAGE = WebServerUtil.getProperties("server.properties", "basePackage");
-
 	/**
 	 * URL匹配映射(GET请求)
 	 */
@@ -76,7 +74,7 @@ public final class WebServer {
 	 */
 	private static void init() throws Exception {
 		// 扫描指定包下的所有类及子类
-		WebServerScanner scan = new WebServerScanner(BASE_PACKAGE);
+		WebServerScanner scan = new WebServerScanner();
 		List<String> list = scan.getFullyQualifiedClassNameList();
 
 		for (String className : list) {

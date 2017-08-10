@@ -1,7 +1,7 @@
 # 项目介绍 #
 
 ### 项目环境 ###
-* Jdk1.6及以上版本
+* Jdk1.7及以上版本
 
 ### 项目启动 ###
 * 在IDE中直接运行App.java
@@ -14,9 +14,6 @@
 
 使用netty.server.core.WebServer.run(int port)启动服务
 * 服务端口为入参port
-
-项目根路径
-* server.properties必须配置basePackage，该包下所有类及子类会被自动扫描
 
 ### 项目规范 ###
 可参照`netty.server.web.Demo`
