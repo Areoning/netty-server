@@ -9,32 +9,56 @@ import java.util.jar.*;
  * 扫描包下所有类
  */
 class WebServerScanner {
-	
-	private final String basePackage;
+
+	private String basePackage;
 	private final ClassLoader cl;
 
-	WebServerScanner(String basePackage) {
-		this.basePackage = basePackage;
+	WebServerScanner() {
 		this.cl = getClass().getClassLoader();
 	}
 
-	WebServerScanner(String basePackage, ClassLoader cl) {
-		this.basePackage = basePackage;
+	WebServerScanner(ClassLoader cl) {
 		this.cl = cl;
 	}
 
 	List<String> getFullyQualifiedClassNameList() throws IOException {
-		System.out.println("开始扫描包" + basePackage + "下的所有类");
+		System.out.println("开始扫描所有类");
 
-		return doScan(basePackage, new ArrayList<String>());
+		List<String> list = new ArrayList<String>();
+		for (Package p : Package.getPackages()) {
+			if (p.getName().startsWith("java."))
+				continue;
+			if (p.getName().startsWith("javax."))
+				continue;
+			if (p.getName().startsWith("sun."))
+				continue;
+			if (p.getName().startsWith("jdk."))
+				continue;
+			if (p.getName().startsWith("io.netty"))
+				continue;
+			if (p.getName().startsWith("javassist"))
+				continue;
+			if (p.getName().startsWith("netty.server.annotation"))
+				continue;
+			if (p.getName().startsWith("netty.server.core"))
+				continue;
+			
+			if(basePackage == null)
+				basePackage = p.getName().substring(0, p.getName().indexOf("."));
+			
+			doScan(p.getName(), list);
+		}
+
+		for (final String n : list)
+			System.out.println("找到" + n);
+		
+		return list;
 	}
 	
 	Class<?> forClassName(final String name) throws Exception {
 		URLClassLoader loader = null;
 		try {
-			final String splashPath = dotToSplash(basePackage);
-
-			final URL url = cl.getResource(splashPath);
+			final URL url = cl.getResource(basePackage);
 			final String filePath = getRootPath(url);
 
 			if (isJarFile(filePath)) {
@@ -55,6 +79,10 @@ class WebServerScanner {
 		final String splashPath = dotToSplash(basePackage);
 
 		final URL url = cl.getResource(splashPath);
+
+		if (url == null)
+			return nameList;
+		
 		final String filePath = getRootPath(url);
 
 		final List<String> names;
@@ -69,21 +97,19 @@ class WebServerScanner {
 		}
 
 		for (final String name : names)
-			if (isClassFile(name))
-				nameList.add(isJarFile(filePath) ? splashToDot(name) : toFullyQualifiedName(name, basePackage));
-			else
+			if (isClassFile(name)) {
+				if (!nameList.contains(name))
+					nameList.add(isJarFile(filePath) ? splashToDot(name) : toFullyQualifiedName(name, basePackage));
+			} else {
 				doScan(basePackage + "." + name, nameList);
-
-		for (final String n : nameList)
-			System.out.println("找到" + n);
+			}
 
 		return nameList;
 	}
 
 	String toFullyQualifiedName(final String shortName, final String basePackage) {
 		final StringBuilder sb = new StringBuilder(basePackage);
-		sb.append('.');
-		sb.append(trimExtension(shortName));
+		sb.append('.').append(trimExtension(shortName));
 
 		return sb.toString();
 	}
