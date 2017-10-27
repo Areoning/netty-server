@@ -8,6 +8,7 @@ import io.netty.handler.codec.http.*;
 import javassist.*;
 import javassist.Modifier;
 import javassist.bytecode.*;
+import netty.server.annotation.type.PageEngine;
 
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static netty.server.core.WebServer.*;
@@ -31,10 +32,16 @@ class WebServerMapping {
 	 * 该方法的参数名
 	 */
 	final String[] names;
+	
+	/**
+	 * 模板引擎
+	 */
+	final PageEngine engine;
 
-	WebServerMapping(final Class<?> clazz, final Method method) throws Exception {
+	WebServerMapping(final Class<?> clazz, final Method method, final PageEngine engine) throws Exception {
 		this.clazz = clazz;
 		this.method = method;
+		this.engine = engine;
 
 		// 使用增强反射工具，还原出参数名，在服务器启动时预处理，可以提升运行时速度
 		// 这里还可以定义成静态来提升速度，由于增强反射后面不会用到，定义成静态不会被GC回收，所以定义到这里就可以了

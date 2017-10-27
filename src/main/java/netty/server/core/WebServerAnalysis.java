@@ -6,6 +6,8 @@ import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.*;
+import netty.server.annotation.type.PageEngine;
+import netty.server.engine.VelocityTemp;
 
 import java.io.*;
 import java.util.*;
@@ -29,6 +31,8 @@ class WebServerAnalysis {
 		final List<File> fileCache = new ArrayList<File>();
 		final List<String> pathCache = new ArrayList<String>();
 
+		final Map<String, Object> attrubite = new HashMap<String, Object>();
+		
 		// 解析入参
 		final Class<?>[] params = mapping.method.getParameterTypes();
 		final Object[] args = new Object[params.length];
@@ -56,6 +60,9 @@ class WebServerAnalysis {
 						pathCache.add(file.getPath());
 					}
 					args[i] = file;
+				} else if (params[i] == Map.class) {
+					// 入参类型是Map，用于接收返回值
+					args[i] = attrubite;
 				} else {
 					// 入参类型无法解析
 					args[i] = null;
@@ -104,14 +111,19 @@ class WebServerAnalysis {
 				raf.close();
 			} else if (resultType != void.class) {
 				// 出参类型是文件外的其他类型
-				final Object result = mapping.method.invoke(mapping.clazz.newInstance(), args);
+				Object result = mapping.method.invoke(mapping.clazz.newInstance(), args);
 				
 				if (result != null) {
+					if (mapping.engine == PageEngine.Velocity) {
+						result = VelocityTemp.get(result.toString(), attrubite);
+					}
+					
 					final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);
 					fullResponse.content().writeBytes(buffer);
 					buffer.release();
 				}
 			}
+			
 			if (resultType != File.class) {
 				// 不是文件，以文本形式输出
 				fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");

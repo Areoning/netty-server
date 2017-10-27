@@ -3,9 +3,12 @@ package netty.server.web;
 import io.netty.handler.codec.http.*;
 
 import java.io.*;
+import java.util.Map;
 
 import net.sf.json.*;
 import netty.server.annotation.*;
+import netty.server.annotation.type.PageEngine;
+
 import static netty.server.annotation.type.HttpMethod.*;
 
 /**
@@ -27,15 +30,16 @@ public class Demo {
 	 * 
 	 * 出参类型为String，将该字符串输出到页面
 	 */
-	@WebUri("/")
-	String index() {
+	@WebUri(value = "/", engine = PageEngine.Velocity)
+	String index(Map<String, Object> map) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
 		if (directory.exists())
 			return JSONArray.fromObject(directory.list()).toString();
 
+		map.put("msg", "没有文件");
 		// 否则提示没有文件
-		return "没有文件";
+		return "msg.html";
 	}
 	
 	/**
