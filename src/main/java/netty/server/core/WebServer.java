@@ -97,13 +97,13 @@ public final class WebServer {
 					continue;
 
 				System.out.println("加载路径：" + uri.value() + second.value());
-				System.out.println("返回类型：" + uri.engine());
+				System.out.println("返回类型：" + second.engine());
 				
 				// 设置为可写
 				method.setAccessible(true);
 
 				// 存入映射实体中
-				WebServerMapping mapping = new WebServerMapping(clazz, method, uri.engine());
+				WebServerMapping mapping = new WebServerMapping(clazz, method, second.engine());
 				
 				// 转义为匹配和通配路径
 				String match = uri.value() + second.value();

@@ -61,6 +61,9 @@
 			<resource>
 				<directory>src/main/resources</directory>
 			</resource>
+			<resource>
+				<directory>src/main/page</directory>
+			</resource>
 		</resources>
 		<plugins>
 			<plugin>

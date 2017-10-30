@@ -35,17 +35,14 @@ public class Demo {
 	 * 
 	 * (不使用@WebMethod注解时GET请求和POST请求都可以访问)
 	 * 
-	 * 出参类型为String，将该字符串输出到页面
+	 * engine为PageEngine.Velocity时，出参类型为String，跳转到该页面
 	 */
-	@WebUri("/")
-	String index() {
+	@WebUri(value = "/", engine = PageEngine.Velocity)
+	String index(Map<String, Object> attribute) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		if (directory.exists())
-			return JSONArray.fromObject(directory.list()).toString();
-
-		// 否则提示没有文件
-		return "没有文件";
+		attribute.put("msg", directory.exists() ? JSONArray.fromObject(directory.list()).toString() : "没有文件");
+		return "msg.html";
 	}
 	
 	/**
@@ -137,5 +134,5 @@ public class Demo {
 ```
 
 ### 未完成 ###
-* 模版引擎(暂不打算开发，可作为独立项目)
+* 代码结构混乱，待优化
 * 转发和重定向(本项目用于文件/接口服务器，暂不打算开发)
