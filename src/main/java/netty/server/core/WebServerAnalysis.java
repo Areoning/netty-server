@@ -17,10 +17,11 @@ import java.util.*;
  */
 class WebServerAnalysis {
 
-	static boolean analysis(final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
+	static boolean analysis(final ChannelHandlerContext ctx, final FullHttpRequest request, final Map<String, Object> attrubite) throws Exception {
 		// 解析uri
 		final QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
-		final Map<String, List<String>> query_param = decoder.parameters();
+		final Map<String, List<String>> parameters = decoder.parameters();
+		
 		// 去url映射中匹配
 		final WebServerMapping mapping = WebServerMapping.get(request, decoder.path());
 
@@ -30,8 +31,6 @@ class WebServerAnalysis {
 		// 文件缓存
 		final List<File> fileCache = new ArrayList<File>();
 		final List<String> pathCache = new ArrayList<String>();
-
-		final Map<String, Object> attrubite = new HashMap<String, Object>();
 		
 		// 解析入参
 		final Class<?>[] params = mapping.method.getParameterTypes();
@@ -50,7 +49,7 @@ class WebServerAnalysis {
 					args[i] = request;
 				} else if (params[i] == String.class) {
 					// 入参类型是String
-					final List<String> list = query_param.get(mapping.names[i]);
+					final List<String> list = parameters.get(mapping.names[i]);
 					args[i] = WebServerUtil.listToString(list);
 				} else if (params[i] == File.class) {
 					// 入参类型是File
@@ -62,7 +61,11 @@ class WebServerAnalysis {
 					args[i] = file;
 				} else if (params[i] == Map.class) {
 					// 入参类型是Map，用于接收返回值
-					args[i] = attrubite;
+					if (mapping.names[i].equals("attr")) {
+						args[i] = attrubite;
+					} else if(mapping.names[i].equals("params")) {
+						args[i] = parameters;
+					}
 				} else {
 					// 入参类型无法解析
 					args[i] = null;

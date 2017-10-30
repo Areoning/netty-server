@@ -3,7 +3,7 @@ package netty.server.web;
 import io.netty.handler.codec.http.*;
 
 import java.io.*;
-import java.util.Map;
+import java.util.*;
 
 import net.sf.json.*;
 import netty.server.annotation.*;
@@ -31,10 +31,11 @@ public class Demo {
 	 * engine为PageEngine.Velocity时，出参类型为String，跳转到该页面
 	 */
 	@WebUri(value = "/", engine = PageEngine.Velocity)
-	String index(Map<String, Object> attribute) {
+	String index(Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attribute.put("msg", directory.exists() ? JSONArray.fromObject(directory.list()).toString() : "没有文件");
+		attr.put("msg", directory.exists() ? JSONArray.fromObject(directory.list()).toString() : "没有文件");
+		// 使用msg.html页面
 		return "msg.html";
 	}
 

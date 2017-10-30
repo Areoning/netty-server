@@ -8,7 +8,7 @@ import io.netty.handler.codec.http.*;
 import javassist.*;
 import javassist.Modifier;
 import javassist.bytecode.*;
-import netty.server.annotation.type.PageEngine;
+import netty.server.annotation.type.*;
 
 import static io.netty.handler.codec.http.HttpMethod.*;
 import static netty.server.core.WebServer.*;
