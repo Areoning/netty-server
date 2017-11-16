@@ -1,5 +1,7 @@
 package netty.server.core;
 
+import static netty.server.core.annotation.type.HttpMethod.*;
+
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -8,8 +10,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.*;
 import io.netty.channel.socket.nio.*;
 import io.netty.handler.logging.*;
-import netty.server.annotation.*;
-import static netty.server.annotation.type.HttpMethod.*;
+import netty.server.core.annotation.*;
 
 /**
  * Web服务启动类

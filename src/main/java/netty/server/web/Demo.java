@@ -2,14 +2,14 @@ package netty.server.web;
 
 import io.netty.handler.codec.http.*;
 
+import static netty.server.core.annotation.type.HttpMethod.*;
+
 import java.io.*;
 import java.util.*;
 
 import net.sf.json.*;
-import netty.server.annotation.*;
-import netty.server.annotation.type.*;
-
-import static netty.server.annotation.type.HttpMethod.*;
+import netty.server.core.annotation.*;
+import netty.server.core.annotation.type.*;
 
 /**
  * 相当于J2EE中的Servlet，使用@WebUri注解的类才会被加载

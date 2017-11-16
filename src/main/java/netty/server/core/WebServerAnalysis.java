@@ -6,8 +6,8 @@ import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.*;
-import netty.server.annotation.type.*;
-import netty.server.engine.*;
+import netty.server.core.annotation.type.*;
+import netty.server.core.engine.*;
 
 import java.io.*;
 import java.util.*;
@@ -16,7 +16,7 @@ import java.util.*;
  * URL解析类
  */
 class WebServerAnalysis {
-
+	
 	static boolean analysis(final ChannelHandlerContext ctx, final FullHttpRequest request, final Map<String, Object> attrubite) throws Exception {
 		// 解析uri
 		final QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
@@ -76,8 +76,6 @@ class WebServerAnalysis {
 		// 解析出参
 		final Class<?> resultType = mapping.method.getReturnType();
 		{
-			// 用于文件下载
-			final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
 			// 用于返回结果
 			final FullHttpResponse fullResponse = new DefaultFullHttpResponse(HTTP_1_1, OK);
 			
@@ -85,33 +83,8 @@ class WebServerAnalysis {
 			if(resultType == File.class){
 				// 出参类型是文件
 				final File file = (File) mapping.method.invoke(mapping.clazz.newInstance(), args);
-	
-				final RandomAccessFile raf;
-				try {
-					raf = new RandomAccessFile(file, "r");
-				} catch (FileNotFoundException ignore) {
-					WebServerUtil.sendError(ctx, NOT_FOUND);
-					return true;
-				}
-	
-				final long fileLength = raf.length();
 				
-				HttpUtil.setContentLength(httpResponse, fileLength);
-				WebServerUtil.setContentTypeHeader(httpResponse, file);
-				WebServerUtil.setDateAndCacheHeaders(httpResponse, file);
-	
-				if (HttpUtil.isKeepAlive(request))
-					httpResponse.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-	
-				ctx.write(httpResponse);
-				ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise());
-				
-				ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT).addListener(ChannelFutureListener.CLOSE);
-	
-				if (!HttpUtil.isKeepAlive(request))
-					lastContentFuture.addListener(ChannelFutureListener.CLOSE);
-				
-				raf.close();
+				WebServerUtil.write(file, ctx, request);
 			} else if (resultType != void.class) {
 				// 出参类型是文件外的其他类型
 				Object result = mapping.method.invoke(mapping.clazz.newInstance(), args);

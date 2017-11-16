@@ -39,68 +39,69 @@ class WebServerUtil {
 
 		if (uri.isEmpty() || uri.charAt(0) != '/')
 			return null;
-		
+
 		uri = uri.replace('/', File.separatorChar);
-		
+
 		if (uri.contains(File.separator + '.') || uri.contains('.' + File.separator) || uri.charAt(0) == '.'
 				|| uri.charAt(uri.length() - 1) == '.' || INSECURE_URI.matcher(uri).matches())
 			return null;
-		
+
 		return SystemPropertyUtil.get("user.dir") + File.separator + uri;
 	}
-	
+
 	/**
 	 * 重定向
 	 */
 	public static void sendRedirect(ChannelHandlerContext ctx, String newUri) {
 		FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, FOUND);
 		response.headers().set(HttpHeaderNames.LOCATION, newUri);
-		
+
 		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 	}
-	
+
 	/**
 	 * 转向错误页
 	 */
 	public static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
-		FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status, Unpooled.copiedBuffer("Failure: " + status + "\r\n", CharsetUtil.UTF_8));
+		FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status,
+				Unpooled.copiedBuffer("Failure: " + status + "\r\n", CharsetUtil.UTF_8));
 		response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=UTF-8");
-		
+
 		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 	}
-	
+
 	public static void sendNotModified(ChannelHandlerContext ctx) {
 		FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, NOT_MODIFIED);
-		
+
 		Calendar time = new GregorianCalendar();
 		response.headers().set(HttpHeaderNames.DATE, FMT.format(time.getTime()));
-		
+
 		ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
 	}
-	
+
 	public static void setDateAndCacheHeaders(HttpResponse response, File fileToCache) {
 		Calendar time = new GregorianCalendar();
 		time.add(Calendar.SECOND, HTTP_CACHE_SECONDS);
-		
-		response.headers()
-			.set(HttpHeaderNames.DATE, FMT.format(time.getTime()))
-			.set(HttpHeaderNames.EXPIRES, FMT.format(time.getTime()))
-			.set(HttpHeaderNames.CACHE_CONTROL, "private, max-age=" + HTTP_CACHE_SECONDS)
-			.set(HttpHeaderNames.LAST_MODIFIED, FMT.format(new Date(fileToCache.lastModified())));
+
+		response.headers().set(HttpHeaderNames.DATE, FMT.format(time.getTime()))
+				.set(HttpHeaderNames.EXPIRES, FMT.format(time.getTime()))
+				.set(HttpHeaderNames.CACHE_CONTROL, "private, max-age=" + HTTP_CACHE_SECONDS)
+				.set(HttpHeaderNames.LAST_MODIFIED, FMT.format(new Date(fileToCache.lastModified())));
 	}
-	
+
 	public static void setContentTypeHeader(HttpResponse response, File file) {
 		MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
 		response.headers().set(HttpHeaderNames.CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
 	}
-	
+
 	/**
 	 * 读取配置文件
+	 * 
 	 * @param source 配置文件
 	 * @param key
 	 * @return value
 	 */
-	public static String getProperties(String source, String key){
+	public static String getProperties(String source, String key) {
 		try {
 			Properties prop = new Properties();
 			prop.load(WebServerUtil.class.getClassLoader().getResourceAsStream(source));
@@ -126,7 +127,7 @@ class WebServerUtil {
 		}
 		return result.toString();
 	}
-	
+
 	/**
 	 * 读取文件
 	 */
@@ -178,8 +179,45 @@ class WebServerUtil {
 			return null;
 		} finally {
 			if (os != null)
-				try { os.close(); } catch (Exception e) { }
+				try {
+					os.close();
+				} catch (Exception e) {
+				}
 			data.release();
 		}
+	}
+
+	public static void write(final File file, final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
+		// 用于文件下载
+		final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
+
+		final RandomAccessFile raf;
+		try {
+			raf = new RandomAccessFile(file, "r");
+		} catch (FileNotFoundException ignore) {
+			WebServerUtil.sendError(ctx, NOT_FOUND);
+			return;
+		}
+
+		final long fileLength = raf.length();
+
+		HttpUtil.setContentLength(httpResponse, fileLength);
+		WebServerUtil.setContentTypeHeader(httpResponse, file);
+		WebServerUtil.setDateAndCacheHeaders(httpResponse, file);
+
+		if (HttpUtil.isKeepAlive(request))
+			httpResponse.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+
+		ctx.write(httpResponse);
+		ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise());
+
+		ChannelFuture lastContentFuture = ctx
+				.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
+				.addListener(ChannelFutureListener.CLOSE);
+
+		if (!HttpUtil.isKeepAlive(request))
+			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+
+		raf.close();
 	}
 }

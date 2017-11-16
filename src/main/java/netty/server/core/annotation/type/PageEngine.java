@@ -1,4 +1,4 @@
-package netty.server.annotation.type;
+package netty.server.core.annotation.type;
 
 public enum PageEngine {
 	None, Velocity

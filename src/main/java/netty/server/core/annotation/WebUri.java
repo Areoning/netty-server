@@ -1,8 +1,8 @@
-package netty.server.annotation;
+package netty.server.core.annotation;
 
 import java.lang.annotation.*;
 
-import netty.server.annotation.type.PageEngine;
+import netty.server.core.annotation.type.PageEngine;
 
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

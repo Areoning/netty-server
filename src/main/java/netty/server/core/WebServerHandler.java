@@ -5,6 +5,8 @@ import io.netty.handler.codec.http.*;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
+import java.io.*;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -38,6 +40,9 @@ class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 		WebServerUtil.sendError(ctx, NOT_FOUND);
 	}
 
+	/**
+	 * 500页面
+	 */
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		cause.printStackTrace();
 		if (ctx.channel().isActive())
