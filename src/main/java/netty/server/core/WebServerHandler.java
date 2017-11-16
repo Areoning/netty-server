@@ -5,8 +5,6 @@ import io.netty.handler.codec.http.*;
 
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 
-import java.io.*;
-import java.net.*;
 import java.util.*;
 
 /**
@@ -28,16 +26,19 @@ class WebServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 		
 		// 此处流程应为：
 		// 1.进入过滤器(如果不符合条件，拦截，不继续执行)
-		// 2.验证URL是否符合映射(如果不符合，直接报404，不继续执行)
-		// 3.解析入参出参并执行，将结果返回(不输出)
-		// 4.进入后置过滤器(后置过滤器不拦截，只对参数进行处理)
-		// 5.将结果输出
 		
-		// 解析url，如果配置了并成功执行就不再执行后续操作
-		if (WebServerAnalysis.analysis(ctx, request, attrubite))
+		// 2.验证URL是否符合映射(如果不符合，直接报404，不继续执行)
+		WebServerAnalysis analysis = WebServerAnalysis.analysis(ctx, request);
+		if (analysis == null)
 			return;
 		
-		WebServerUtil.sendError(ctx, NOT_FOUND);
+		// 3.解析入参出参并执行，将结果返回(不输出)
+		final Object result = analysis.execute(attrubite);
+		
+		// 4.进入后置过滤器(后置过滤器不拦截，只对参数进行处理)
+		
+		// 5.将结果输出
+		analysis.write(attrubite, result);
 	}
 
 	/**

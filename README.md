@@ -27,31 +27,37 @@
  */
 @WebUri
 public class Demo {
-	
+
 	private final String home = "/file/";
-	
+
 	/**
 	 * 请求根路径
 	 * 
 	 * (不使用@WebMethod注解时GET请求和POST请求都可以访问)
 	 * 
 	 * engine为PageEngine.Velocity时，出参类型为String，跳转到该页面
+	 * 
+	 * @param params 相当于request.getParameter
+	 * @param attr 相当于request.getAttribute
 	 */
 	@WebUri(value = "/", engine = PageEngine.Velocity)
-	String index(Map<String, Object> attribute) {
+	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attribute.put("msg", directory.exists() ? JSONArray.fromObject(directory.list()).toString() : "没有文件");
+		attr.put("msg", directory.exists()
+				? JSONArray.fromObject(directory.list()).toString()
+				: "没有文件");
+		// 使用msg.html页面
 		return "msg.html";
 	}
-	
+
 	/**
 	 * 请求路径为:"/upload"
 	 * 
 	 * (@WebMethod注解为HttpMethod.POST时只接收POST请求)
 	 * 
-	 * 入参类型为File，接收对应参数名的文件，字符集必须是UTF-8格式，否则文件名不能为中文
-	 * 例如入参对象名为file，接收<input type="file" name="file" />，如果name为file的文件有多个，则接收第一个
+	 * 入参类型为File，接收对应参数名的文件，字符集必须是UTF-8格式，否则文件名不能为中文 例如入参对象名为file，接收
+	 * <input type="file" name="file" />，如果name为file的文件有多个，则接收第一个
 	 */
 	@WebUri("/upload")
 	@WebMethod(method = POST)
@@ -72,14 +78,13 @@ public class Demo {
 		// 将文件名输出到页面
 		return file.getName();
 	}
-	
+
 	/**
 	 * 请求路径为:"/download/*"，*为通配符
 	 * 
 	 * (@WebMethod注解为HttpMethod.GET时只接收GET请求)
 	 * 
-	 * 入参类型为HttpRequest，获取本次请求的Request对象(Netty类型，与J2EE不一致)
-	 * 出参类型为File，下载该文件
+	 * 入参类型为HttpRequest，获取本次请求的Request对象(Netty类型，与J2EE不一致) 出参类型为File，下载该文件
 	 */
 	@WebUri("/download/*")
 	@WebMethod(method = GET)
@@ -124,7 +129,7 @@ public class Demo {
 		if (directory.exists()) {
 			for (File file : directory.listFiles())
 				file.delete();
-			
+
 			directory.delete();
 		}
 

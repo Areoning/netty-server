@@ -29,12 +29,17 @@ public class Demo {
 	 * (不使用@WebMethod注解时GET请求和POST请求都可以访问)
 	 * 
 	 * engine为PageEngine.Velocity时，出参类型为String，跳转到该页面
+	 * 
+	 * @param params 相当于request.getParameter
+	 * @param attr 相当于request.getAttribute
 	 */
 	@WebUri(value = "/", engine = PageEngine.Velocity)
-	String index(Map<String, Object> attr) {
+	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attr.put("msg", directory.exists() ? JSONArray.fromObject(directory.list()).toString() : "没有文件");
+		attr.put("msg", directory.exists()
+				? JSONArray.fromObject(directory.list()).toString()
+				: "没有文件");
 		// 使用msg.html页面
 		return "msg.html";
 	}
