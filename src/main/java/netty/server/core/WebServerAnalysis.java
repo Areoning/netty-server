@@ -18,8 +18,11 @@ import java.util.*;
 class WebServerAnalysis {
 	
 	private final FullHttpRequest request;
+	
 	private final ChannelHandlerContext ctx;
+	
 	private final WebServerMapping mapping;
+	
 	private final QueryStringDecoder decoder;
 	
 	private WebServerAnalysis(final FullHttpRequest request,
@@ -128,6 +131,15 @@ class WebServerAnalysis {
 		} else if (result != null) {
 			if (mapping.engine == PageEngine.Velocity) {
 				result = VelocityTemp.get(result.toString(), attrubite);
+
+				String zip = WebServerUtil.getProperties("server.properties", "template.zip");
+
+				// 是否代码压缩，模式为否
+				if (zip != null && zip.equals("true"))
+					result = result.toString()
+						.replace("\t", "")
+						.replace("\r", "")
+						.replace("\n", "");
 			}
 
 			final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);

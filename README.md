@@ -44,11 +44,11 @@ public class Demo {
 	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attr.put("msg", directory.exists()
-				? JSONArray.fromObject(directory.list()).toString()
+		attr.put("msg", directory.exists() && directory.list().length > 0
+				? Arrays.asList(directory.list())
 				: "没有文件");
-		// 使用msg.html页面
-		return "msg.html";
+		// 使用index.html页面
+		return "index.html";
 	}
 
 	/**
@@ -140,4 +140,6 @@ public class Demo {
 
 ### 未完成 ###
 * 代码结构混乱，待优化
-* 转发和重定向(本项目用于文件/接口服务器，暂不打算开发)
+* 转发和重定向
+* 自动扫描包有问题，需重写
+* 包内静态文件读取没有实现

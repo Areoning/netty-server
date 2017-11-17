@@ -88,7 +88,8 @@ public final class WebServer {
 
 			// 扫描出该类的所有方法
 			Method[] methods = clazz.getDeclaredMethods();
-
+			StringBuffer sb = new StringBuffer();
+			
 			for (Method method : methods) {
 				WebUri second = method.getAnnotation(WebUri.class);
 				WebMethod httpMethod = method.getAnnotation(WebMethod.class);
@@ -96,9 +97,6 @@ public final class WebServer {
 				// 如果该方法没有@WebUri注解，跳过
 				if (second == null)
 					continue;
-
-				System.out.println("加载路径：" + uri.value() + second.value());
-				System.out.println("返回类型：" + second.engine());
 				
 				// 设置为可写
 				method.setAccessible(true);
@@ -108,7 +106,10 @@ public final class WebServer {
 				
 				// 转义为匹配和通配路径
 				String match = uri.value() + second.value();
-				String wildcards = "^" + match.replace("*", ".*") + "$";
+				String wildcards = sb.append("^")
+						.append(match.replace("*", ".*"))
+						.append("$")
+						.toString();
 
 				// 为了提升检索速度，在服务器启动时将URL映射存放在4个Map中，此方式消耗内存较大
 				if (httpMethod == null || httpMethod.method() == GET) {
@@ -124,6 +125,8 @@ public final class WebServer {
 					else
 						POST_WILDCARDS.put(wildcards, mapping);
 				}
+
+				sb.setLength(0);
 			}
 		}
 	}

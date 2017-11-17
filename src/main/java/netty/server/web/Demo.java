@@ -7,7 +7,6 @@ import static netty.server.core.annotation.type.HttpMethod.*;
 import java.io.*;
 import java.util.*;
 
-import net.sf.json.*;
 import netty.server.core.annotation.*;
 import netty.server.core.annotation.type.*;
 
@@ -37,11 +36,11 @@ public class Demo {
 	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attr.put("msg", directory.exists()
-				? JSONArray.fromObject(directory.list()).toString()
+		attr.put("msg", directory.exists() && directory.list().length > 0
+				? Arrays.asList(directory.list())
 				: "没有文件");
-		// 使用msg.html页面
-		return "msg.html";
+		// 使用index.html页面
+		return "index.html";
 	}
 
 	/**

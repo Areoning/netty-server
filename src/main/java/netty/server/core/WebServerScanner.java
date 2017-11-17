@@ -38,13 +38,12 @@ class WebServerScanner {
 				continue;
 			if (p.getName().startsWith("javassist"))
 				continue;
-			if (p.getName().startsWith("netty.server.annotation"))
-				continue;
 			if (p.getName().startsWith("netty.server.core"))
 				continue;
+			if (p.getName().startsWith("org.slf4j"))
+				continue;
 			
-			if(basePackage == null)
-				basePackage = p.getName().substring(0, p.getName().indexOf("."));
+			basePackage = p.getName().substring(0, p.getName().indexOf("."));
 			
 			doScan(p.getName(), list);
 		}
@@ -87,12 +86,8 @@ class WebServerScanner {
 
 		final List<String> names;
 		if (isJarFile(filePath)) {
-			System.out.println(filePath + "是一个JAR包");
-
 			names = readFromJarFile(filePath, splashPath);
 		} else {
-			System.out.println(filePath + "是一个目录");
-
 			names = readFromDirectory(filePath);
 		}
 
@@ -101,7 +96,10 @@ class WebServerScanner {
 				if (!nameList.contains(name))
 					nameList.add(isJarFile(filePath) ? splashToDot(name) : toFullyQualifiedName(name, basePackage));
 			} else {
-				doScan(basePackage + "." + name, nameList);
+				doScan(new StringBuilder(basePackage)
+						.append(".")
+						.append(name)
+						.toString(), nameList);
 			}
 
 		return nameList;
@@ -115,8 +113,6 @@ class WebServerScanner {
 	}
 
 	List<String> readFromJarFile(final String jarPath, final String splashedPackageName) throws IOException {
-		System.out.println("从JAR包中读取类:" + jarPath);
-
 		final List<String> nameList = new ArrayList<String>();
 
 		JarInputStream jarIn = null;

@@ -168,7 +168,10 @@ class WebServerUtil {
 			if (bytes.length == 0)
 				return null;
 
-			File file = new File(SystemPropertyUtil.get("user.dir") + File.separator + UUID.randomUUID());
+			StringBuilder path = new StringBuilder(SystemPropertyUtil.get("user.dir"));
+			path.append(File.separator).append(UUID.randomUUID());
+			
+			File file = new File(path.toString());
 			os = new FileOutputStream(file);
 
 			buf.readBytes(bytes);
