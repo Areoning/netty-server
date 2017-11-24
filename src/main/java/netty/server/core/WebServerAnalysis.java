@@ -10,6 +10,7 @@ import netty.server.core.annotation.type.*;
 import netty.server.core.engine.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.util.*;
 
 /**
@@ -50,8 +51,10 @@ class WebServerAnalysis {
 		if (mapping != null)
 			return new WebServerAnalysis(request, ctx, mapping, decoder);
 
-		// 这里是重中之重，判断文件是否存在，如果存在，下载，如果不存在，返回404
-		WebServerUtil.sendError(ctx, NOT_FOUND);
+		// 判断文件是否存在，如果存在，下载，如果不存在，返回404
+		if(!WebServerUtil.resource(decoder.path(), ctx, request))
+			WebServerUtil.sendError(ctx, NOT_FOUND);
+		
 		return null;
 	}
 	
@@ -59,8 +62,12 @@ class WebServerAnalysis {
 	 * 解析入参并执行，但是不输出
 	 * 
 	 * @return
+	 * @throws InstantiationException 
+	 * @throws InvocationTargetException 
+	 * @throws IllegalArgumentException 
+	 * @throws IllegalAccessException 
 	 */
-	Object execute(final Map<String, Object> attrubite) throws Exception {
+	Object execute(final Map<String, Object> attrubite) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
 		// 获取入参
 		final Map<String, List<String>> parameters = decoder.parameters();
 
@@ -116,41 +123,44 @@ class WebServerAnalysis {
 	
 	/**
 	 * 输出结果
+	 * @throws IOException 
 	 */
-	void write(final Map<String, Object> attrubite, Object result) throws Exception {
+	void write(final Map<String, Object> attrubite, Object result) throws IOException {
 		// 解析出参
 		final Class<?> resultType = mapping.method.getReturnType();
 		
 		// 用于返回结果
 		final FullHttpResponse fullResponse = new DefaultFullHttpResponse(HTTP_1_1, OK);
 
-		// 出参类型只需要判断3种即可:文件、void、其他，其他所有类型暂时都转做字符串处理
+		// 出参类型是文件
 		if (resultType == File.class) {
-			// 出参类型是文件
 			WebServerUtil.write((File) result, ctx, request);
-		} else if (result != null) {
-			if (mapping.engine == PageEngine.Velocity) {
-				result = VelocityTemp.get(result.toString(), attrubite);
-
-				String zip = WebServerUtil.getProperties("server.properties", "template.zip");
-
-				// 是否代码压缩，模式为否
-				if (zip != null && zip.equals("true"))
-					result = result.toString()
-						.replace("\t", "")
-						.replace("\r", "")
-						.replace("\n", "");
-			}
-
-			final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);
-			fullResponse.content().writeBytes(buffer);
-			buffer.release();
+			return;
 		}
 
-		if (resultType != File.class) {
-			// 不是文件，以文本形式输出
-			fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
-			ctx.writeAndFlush(fullResponse).addListener(ChannelFutureListener.CLOSE);
+		// 出参是void或null
+		if(result == null)
+			return;
+		
+		// 选择velocity模板
+		if (mapping.engine == PageEngine.Velocity) {
+			result = VelocityTemp.get(result.toString(), attrubite);
+
+			String zip = WebServerUtil.getProperties("server.properties", "template.zip");
+
+			// 是否代码压缩，默认为否
+			if (zip != null && zip.equals("true"))
+				result = result.toString()
+					.replace("\t", "")
+					.replace("\r", "")
+					.replace("\n", "");
 		}
+
+		final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);
+		fullResponse.content().writeBytes(buffer);
+		buffer.release();
+		
+		fullResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
+		ctx.writeAndFlush(fullResponse).addListener(ChannelFutureListener.CLOSE);
 	}
 }

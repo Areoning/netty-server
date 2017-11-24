@@ -2,6 +2,7 @@ package netty.server.core;
 
 import static netty.server.core.annotation.type.HttpMethod.*;
 
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -72,8 +73,9 @@ public final class WebServer {
 
 	/**
 	 * 初始化
+	 * @throws IOException
 	 */
-	private static void init() throws Exception {
+	private static void init() throws IOException {
 		// 扫描指定包下的所有类及子类
 		WebServerScanner scan = new WebServerScanner();
 		List<String> list = scan.getFullyQualifiedClassNameList();
@@ -92,7 +94,6 @@ public final class WebServer {
 			
 			for (Method method : methods) {
 				WebUri second = method.getAnnotation(WebUri.class);
-				WebMethod httpMethod = method.getAnnotation(WebMethod.class);
 
 				// 如果该方法没有@WebUri注解，跳过
 				if (second == null)
@@ -112,14 +113,14 @@ public final class WebServer {
 						.toString();
 
 				// 为了提升检索速度，在服务器启动时将URL映射存放在4个Map中，此方式消耗内存较大
-				if (httpMethod == null || httpMethod.method() == GET) {
+				if (second.method() != POST) {
 					if (match.indexOf("*") == -1)
 						GET_MAPPING.put(match, mapping);
 					else
 						GET_WILDCARDS.put(wildcards, mapping);
 				}
 
-				if (httpMethod == null || httpMethod.method() == POST) {
+				if (second.method() != GET) {
 					if (match.indexOf("*") == -1)
 						POST_MAPPING.put(match, mapping);
 					else

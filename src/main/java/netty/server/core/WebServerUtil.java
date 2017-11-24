@@ -13,6 +13,13 @@ import io.netty.util.internal.*;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.text.*;
 import java.util.*;
 import java.util.regex.*;
@@ -131,7 +138,7 @@ class WebServerUtil {
 	/**
 	 * 读取文件
 	 */
-	public static File readFile(ChannelHandlerContext ctx, HttpRequest request, String fileName) throws Exception {
+	public static File readFile(ChannelHandlerContext ctx, HttpRequest request, String fileName) {
 		HttpDataFactory factory = new DefaultHttpDataFactory(DefaultHttpDataFactory.MINSIZE);
 		HttpContent chunk = (HttpContent) request;
 		HttpPostMultipartRequestDecoder decoder;
@@ -190,7 +197,7 @@ class WebServerUtil {
 		}
 	}
 
-	public static void write(final File file, final ChannelHandlerContext ctx, final FullHttpRequest request) throws Exception {
+	public static void write(final File file, final ChannelHandlerContext ctx, final FullHttpRequest request) throws IOException {
 		// 用于文件下载
 		final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
 
@@ -222,5 +229,44 @@ class WebServerUtil {
 			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
 
 		raf.close();
+	}
+	
+	public static boolean resource(String path, final ChannelHandlerContext ctx, final FullHttpRequest request) {
+		URL url = WebServerUtil.class.getResource(path);
+		if(url == null)
+			return false;
+
+		File file = null;
+		InputStream is = null;
+		OutputStream os = null;
+		
+		try{
+			file = File.createTempFile("nts", "x");
+			
+			is = WebServerUtil.class.getResourceAsStream(path);
+			os = new FileOutputStream(file);
+			
+			byte[] bytes = new byte[1024];
+			int byteread;
+			
+			while ((byteread = is.read(bytes)) != -1) {
+				os.write(bytes, 0, byteread);
+			}
+			
+			write(file, ctx, request);
+			return true;
+		}catch(IOException e){
+			return false;
+		}finally{
+			if(os != null)
+				try{
+					os.close();
+				}catch(Exception e){}
+			if(is != null)
+				try{
+					is.close();
+				}catch(Exception e){}
+			file.deleteOnExit();
+		}
 	}
 }

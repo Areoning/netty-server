@@ -10,7 +10,7 @@ import java.util.jar.*;
  */
 class WebServerScanner {
 
-	private String basePackage;
+	private String root = WebServerUtil.getProperties("server.properties", "root");
 	private final ClassLoader cl;
 
 	WebServerScanner() {
@@ -25,28 +25,7 @@ class WebServerScanner {
 		System.out.println("开始扫描所有类");
 
 		List<String> list = new ArrayList<String>();
-		for (Package p : Package.getPackages()) {
-			if (p.getName().startsWith("java."))
-				continue;
-			if (p.getName().startsWith("javax."))
-				continue;
-			if (p.getName().startsWith("sun."))
-				continue;
-			if (p.getName().startsWith("jdk."))
-				continue;
-			if (p.getName().startsWith("io.netty"))
-				continue;
-			if (p.getName().startsWith("javassist"))
-				continue;
-			if (p.getName().startsWith("netty.server.core"))
-				continue;
-			if (p.getName().startsWith("org.slf4j"))
-				continue;
-			
-			basePackage = p.getName().substring(0, p.getName().indexOf("."));
-			
-			doScan(p.getName(), list);
-		}
+		doScan(root, list);
 
 		for (final String n : list)
 			System.out.println("找到" + n);
@@ -54,10 +33,10 @@ class WebServerScanner {
 		return list;
 	}
 	
-	Class<?> forClassName(final String name) throws Exception {
+	Class<?> forClassName(final String name) {
 		URLClassLoader loader = null;
 		try {
-			final URL url = cl.getResource(basePackage);
+			final URL url = cl.getResource(dotToSplash(root));
 			final String filePath = getRootPath(url);
 
 			if (isJarFile(filePath)) {
@@ -68,9 +47,13 @@ class WebServerScanner {
 			}
 
 			return Class.forName(name);
+		} catch(ClassNotFoundException e) {
+			// 原则上不会报这个异常，因为执行到这里的类都是从工程里扫描出来的
+			e.printStackTrace();
+			return null;
 		} finally {
 			if (loader != null)
-				loader.close();
+				try{ loader.close(); } catch (IOException e) {}
 		}
 	}
 
@@ -79,6 +62,7 @@ class WebServerScanner {
 
 		final URL url = cl.getResource(splashPath);
 
+		System.out.println("url:" + url);
 		if (url == null)
 			return nameList;
 		
@@ -97,7 +81,7 @@ class WebServerScanner {
 					nameList.add(isJarFile(filePath) ? splashToDot(name) : toFullyQualifiedName(name, basePackage));
 			} else {
 				doScan(new StringBuilder(basePackage)
-						.append(".")
+						.append(basePackage.equals("") ? "" : ".")
 						.append(name)
 						.toString(), nameList);
 			}

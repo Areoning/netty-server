@@ -1,4 +1,4 @@
-package netty.server.web;
+package netty.server.example;
 
 import io.netty.handler.codec.http.*;
 
@@ -25,7 +25,7 @@ public class Demo {
 	/**
 	 * 请求根路径
 	 * 
-	 * (不使用@WebMethod注解时GET请求和POST请求都可以访问)
+	 * (不使用method时GET请求和POST请求都可以访问)
 	 * 
 	 * engine为PageEngine.Velocity时，出参类型为String，跳转到该页面
 	 * 
@@ -46,13 +46,12 @@ public class Demo {
 	/**
 	 * 请求路径为:"/upload"
 	 * 
-	 * (@WebMethod注解为HttpMethod.POST时只接收POST请求)
+	 * (method为HttpMethod.POST时只接收POST请求)
 	 * 
 	 * 入参类型为File，接收对应参数名的文件，字符集必须是UTF-8格式，否则文件名不能为中文 例如入参对象名为file，接收
 	 * <input type="file" name="file" />，如果name为file的文件有多个，则接收第一个
 	 */
-	@WebUri("/upload")
-	@WebMethod(method = POST)
+	@WebUri(value = "/upload", method = POST)
 	String upload(File file) {
 		// 文件不存在，提示"未上传文件"
 		if (file == null)
@@ -74,12 +73,11 @@ public class Demo {
 	/**
 	 * 请求路径为:"/download/*"，*为通配符
 	 * 
-	 * (@WebMethod注解为HttpMethod.GET时只接收GET请求)
+	 * (method为HttpMethod.GET时只接收GET请求)
 	 * 
 	 * 入参类型为HttpRequest，获取本次请求的Request对象(Netty类型，与J2EE不一致) 出参类型为File，下载该文件
 	 */
-	@WebUri("/download/*")
-	@WebMethod(method = GET)
+	@WebUri(value = "/download/*", method = GET)
 	File download(HttpRequest request) {
 		// 解析uri，也就是url去掉协议、域名/IP、端口的部分
 		QueryStringDecoder decoder = new QueryStringDecoder(request.uri());
