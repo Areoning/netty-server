@@ -51,8 +51,16 @@ class WebServerAnalysis {
 		if (mapping != null)
 			return new WebServerAnalysis(request, ctx, mapping, decoder);
 
+		String path = decoder.path();
+		
+		// properties和class文件不能被下载
+		if (path.endsWith(".properties") || path.endsWith(".class")) {
+			WebServerUtil.sendError(ctx, NOT_FOUND);
+			return null;
+		}
+		
 		// 判断文件是否存在，如果存在，下载，如果不存在，返回404
-		if(!WebServerUtil.resource(decoder.path(), ctx, request))
+		if(!WebServerUtil.resource(path, ctx, request))
 			WebServerUtil.sendError(ctx, NOT_FOUND);
 		
 		return null;

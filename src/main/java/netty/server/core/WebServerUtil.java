@@ -12,14 +12,8 @@ import io.netty.util.*;
 import io.netty.util.internal.*;
 
 import java.io.*;
+import java.lang.reflect.*;
 import java.net.*;
-import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-import java.nio.channels.FileChannel.MapMode;
 import java.text.*;
 import java.util.*;
 import java.util.regex.*;
@@ -159,6 +153,9 @@ class WebServerUtil {
 		return file;
 	}
 
+	/**
+	 * 向服务器写文件
+	 */
 	private static File writeHttpData(InterfaceHttpData data) {
 		if (data.getHttpDataType() != HttpDataType.FileUpload)
 			return null;
@@ -188,15 +185,14 @@ class WebServerUtil {
 			e.printStackTrace();
 			return null;
 		} finally {
-			if (os != null)
-				try {
-					os.close();
-				} catch (Exception e) {
-				}
+			close(os);
 			data.release();
 		}
 	}
 
+	/**
+	 * 将磁盘上的文件发送到浏览器
+	 */
 	public static void write(final File file, final ChannelHandlerContext ctx, final FullHttpRequest request) throws IOException {
 		// 用于文件下载
 		final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
@@ -215,58 +211,78 @@ class WebServerUtil {
 		WebServerUtil.setContentTypeHeader(httpResponse, file);
 		WebServerUtil.setDateAndCacheHeaders(httpResponse, file);
 
+		write(httpResponse, ctx, request, new DefaultFileRegion(raf.getChannel(), 0, fileLength));
+
+		close(raf);
+	}
+	
+	/**
+	 * 将项目中的静态资源发送到浏览器
+	 */
+	public static boolean resource(String path, final ChannelHandlerContext ctx, final FullHttpRequest request) {
+		URL url = WebServerUtil.class.getResource(path);
+		if(url == null)
+			return false;
+
+		InputStream is = null;
+		
+		try{
+			is = WebServerUtil.class.getResourceAsStream(path);
+			
+			byte[] bytes = new byte[1024];
+			int len;
+
+			ByteBuf message = Unpooled.buffer();
+			while ((len = is.read(bytes)) != -1) {
+				message.writeBytes(bytes, 0, len);
+			}
+			
+			// 用于文件下载
+			final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
+			if (path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".css"))
+				httpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
+
+			write(httpResponse, ctx, request, message);
+			
+			return true;
+		}catch(IOException e){
+			return false;
+		}finally{
+			close(is);
+		}
+	}
+	
+	/**
+	 * 写通道
+	 */
+	private static void write(final HttpResponse httpResponse, final ChannelHandlerContext ctx, final FullHttpRequest request, final Object msg) {
 		if (HttpUtil.isKeepAlive(request))
 			httpResponse.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
-
+		
 		ctx.write(httpResponse);
-		ctx.write(new DefaultFileRegion(raf.getChannel(), 0, fileLength), ctx.newProgressivePromise());
-
+		ctx.writeAndFlush(msg);
+		
 		ChannelFuture lastContentFuture = ctx
 				.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT)
 				.addListener(ChannelFutureListener.CLOSE);
 
 		if (!HttpUtil.isKeepAlive(request))
 			lastContentFuture.addListener(ChannelFutureListener.CLOSE);
-
-		raf.close();
 	}
 	
-	public static boolean resource(String path, final ChannelHandlerContext ctx, final FullHttpRequest request) {
-		URL url = WebServerUtil.class.getResource(path);
-		if(url == null)
-			return false;
-
-		File file = null;
-		InputStream is = null;
-		OutputStream os = null;
+	/**
+	 * 通用关闭，只要传入对象有close方法就会被关闭
+	 */
+	private static void close(Object obj) {
+		if(obj == null)
+			return;
 		
-		try{
-			file = File.createTempFile("nts", "x");
-			
-			is = WebServerUtil.class.getResourceAsStream(path);
-			os = new FileOutputStream(file);
-			
-			byte[] bytes = new byte[1024];
-			int byteread;
-			
-			while ((byteread = is.read(bytes)) != -1) {
-				os.write(bytes, 0, byteread);
-			}
-			
-			write(file, ctx, request);
-			return true;
-		}catch(IOException e){
-			return false;
-		}finally{
-			if(os != null)
-				try{
-					os.close();
-				}catch(Exception e){}
-			if(is != null)
-				try{
-					is.close();
-				}catch(Exception e){}
-			file.deleteOnExit();
+		try {
+			Method method = obj.getClass().getMethod("close");
+			if (method != null)
+				method.invoke(obj);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }
