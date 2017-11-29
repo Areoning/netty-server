@@ -6,14 +6,15 @@ import io.netty.buffer.*;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.*;
 import io.netty.util.*;
-import netty.server.core.annotation.type.*;
+import static netty.server.core.annotation.type.PageEngine.*;
+
 import netty.server.core.engine.*;
 
 import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
-import freemarker.template.TemplateException;
+import freemarker.template.*;
 
 /**
  * URL解析类
@@ -139,9 +140,6 @@ class WebServerAnalysis {
 	void write(final Map<String, Object> attrubite, Object result) throws IOException, TemplateException {
 		// 解析出参
 		final Class<?> resultType = mapping.method.getReturnType();
-		
-		// 用于返回结果
-		final FullHttpResponse fullResponse = new DefaultFullHttpResponse(HTTP_1_1, OK);
 
 		// 出参类型是文件
 		if (resultType == File.class) {
@@ -153,9 +151,12 @@ class WebServerAnalysis {
 		if(result == null)
 			return;
 		
-		switch (mapping.engine) {
-		case Velocity:
-			result = VelocityTemp.get(result.toString(), attrubite);
+		if (mapping.engine != None) {
+			if (mapping.engine == Velocity)
+				result = VelocityTemp.get(result.toString(), attrubite);
+
+			if (mapping.engine == FreeMarker)
+				result = FreeMarkerTemp.get(result.toString(), attrubite);
 
 			String zip = WebServerUtil.getProperties("server.properties", "template.zip");
 
@@ -165,23 +166,11 @@ class WebServerAnalysis {
 					.replace("\t", "")
 					.replace("\r", "")
 					.replace("\n", "");
-			break;
-		case FreeMarker:
-			result = FreeMarkerTemp.get(result.toString(), attrubite);
-
-			zip = WebServerUtil.getProperties("server.properties", "template.zip");
-
-			// 是否代码压缩，默认为否
-			if (zip != null && zip.equals("true"))
-				result = result.toString()
-					.replace("\t", "")
-					.replace("\r", "")
-					.replace("\n", "");
-			break;
-		default:
-			break;
 		}
-
+		
+		// 用于返回结果
+		final FullHttpResponse fullResponse = new DefaultFullHttpResponse(HTTP_1_1, OK);
+		
 		final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);
 		fullResponse.content().writeBytes(buffer);
 		buffer.release();
