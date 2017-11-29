@@ -125,4 +125,13 @@ public class Demo {
 
 		return "清理成功";
 	}
+
+	/**
+	 * freemarker页面测试
+	 */
+	@WebUri(value = "/freemarker", engine = PageEngine.FreeMarker)
+	String index(Map<String, Object> attr) {
+		attr.put("msg", "测试成功");
+		return "freemarker.html";
+	}
 }

@@ -50,8 +50,13 @@ class WebServerMapping {
 		cp.insertClassPath(new ClassClassPath(clazz));
 		
 		try {
+			Class<?>[] types = method.getParameterTypes();
+
+			for (int i = 0; i < names.length; i++)
+				names[i] = types[i].getName();
+			
 			final CtClass cc = cp.get(clazz.getName());
-			final CtMethod cm = cc.getDeclaredMethod(method.getName());
+			final CtMethod cm = cc.getDeclaredMethod(method.getName(), cp.get(names));
 
 			final MethodInfo methodInfo = cm.getMethodInfo();
 			final CodeAttribute codeAttribute = methodInfo.getCodeAttribute();

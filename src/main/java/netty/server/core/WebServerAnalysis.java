@@ -13,6 +13,8 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 
+import freemarker.template.TemplateException;
+
 /**
  * URL解析类
  */
@@ -132,8 +134,9 @@ class WebServerAnalysis {
 	/**
 	 * 输出结果
 	 * @throws IOException 
+	 * @throws TemplateException 
 	 */
-	void write(final Map<String, Object> attrubite, Object result) throws IOException {
+	void write(final Map<String, Object> attrubite, Object result) throws IOException, TemplateException {
 		// 解析出参
 		final Class<?> resultType = mapping.method.getReturnType();
 		
@@ -150,8 +153,8 @@ class WebServerAnalysis {
 		if(result == null)
 			return;
 		
-		// 选择velocity模板
-		if (mapping.engine == PageEngine.Velocity) {
+		switch (mapping.engine) {
+		case Velocity:
 			result = VelocityTemp.get(result.toString(), attrubite);
 
 			String zip = WebServerUtil.getProperties("server.properties", "template.zip");
@@ -162,6 +165,21 @@ class WebServerAnalysis {
 					.replace("\t", "")
 					.replace("\r", "")
 					.replace("\n", "");
+			break;
+		case FreeMarker:
+			result = FreeMarkerTemp.get(result.toString(), attrubite);
+
+			zip = WebServerUtil.getProperties("server.properties", "template.zip");
+
+			// 是否代码压缩，默认为否
+			if (zip != null && zip.equals("true"))
+				result = result.toString()
+					.replace("\t", "")
+					.replace("\r", "")
+					.replace("\n", "");
+			break;
+		default:
+			break;
 		}
 
 		final ByteBuf buffer = Unpooled.copiedBuffer(result.toString(), CharsetUtil.UTF_8);
