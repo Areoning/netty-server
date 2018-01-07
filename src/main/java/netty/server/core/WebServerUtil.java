@@ -212,8 +212,6 @@ class WebServerUtil {
 		WebServerUtil.setDateAndCacheHeaders(httpResponse, file);
 
 		write(httpResponse, ctx, request, new DefaultFileRegion(raf.getChannel(), 0, fileLength));
-
-		close(raf);
 	}
 	
 	/**
