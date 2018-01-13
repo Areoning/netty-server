@@ -36,9 +36,7 @@ public class Demo {
 	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attr.put("msg", directory.exists() && directory.list().length > 0
-				? Arrays.asList(directory.list())
-				: "没有文件");
+		attr.put("files", directory.listFiles());
 		// 使用index.html页面
 		return "index.html";
 	}

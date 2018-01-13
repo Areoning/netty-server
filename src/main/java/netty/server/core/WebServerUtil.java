@@ -237,7 +237,7 @@ class WebServerUtil {
 			
 			// 用于文件下载
 			final HttpResponse httpResponse = new DefaultHttpResponse(HTTP_1_1, OK);
-			if (path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".css"))
+			if (path.endsWith(".html") || path.endsWith(".js"))
 				httpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html; charset=UTF-8");
 
 			write(httpResponse, ctx, request, message);

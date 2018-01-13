@@ -81,7 +81,7 @@ class WebServerAnalysis {
 	Object execute(final Map<String, Object> attrubite) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
 		// 获取入参
 		final Map<String, List<String>> parameters = decoder.parameters();
-
+		
 		// 文件缓存
 		final List<File> fileCache = new ArrayList<File>();
 		final List<String> pathCache = new ArrayList<String>();
