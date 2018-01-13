@@ -75,7 +75,7 @@ public class Demo {
 	 * 
 	 * 入参类型为HttpRequest，获取本次请求的Request对象(Netty类型，与J2EE不一致) 出参类型为File，下载该文件
 	 */
-	@WebUri(value = "/download/*", method = GET)
+	@WebUri(value = "/*", method = GET)
 	File download(HttpRequest request) {
 		// 解析uri，也就是url去掉协议、域名/IP、端口的部分
 		QueryStringDecoder decoder = new QueryStringDecoder(request.uri());

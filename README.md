@@ -44,9 +44,7 @@ public class Demo {
 	String index(Map<String, Object> params, Map<String, Object> attr) {
 		// 如果文件存储目录已存在，以JSON形式返回文件名
 		File directory = new File(home);
-		attr.put("msg", directory.exists() && directory.list().length > 0
-				? Arrays.asList(directory.list())
-				: "没有文件");
+		attr.put("files", directory.listFiles());
 		// 使用index.html页面
 		return "index.html";
 	}
@@ -85,7 +83,7 @@ public class Demo {
 	 * 
 	 * 入参类型为HttpRequest，获取本次请求的Request对象(Netty类型，与J2EE不一致) 出参类型为File，下载该文件
 	 */
-	@WebUri(value = "/download/*", method = GET)
+	@WebUri(value = "/*", method = GET)
 	File download(HttpRequest request) {
 		// 解析uri，也就是url去掉协议、域名/IP、端口的部分
 		QueryStringDecoder decoder = new QueryStringDecoder(request.uri());

@@ -7,18 +7,19 @@
 		<link rel="stylesheet" href="css/bootstrap.min.css" />
 		<script type="text/javascript" src="js/jquery.js"></script>
 		<script type="text/javascript" src="js/bootstrap.min.js"></script>
-		<style>
-			body {
-				background: #efefef;
-			}
-			
-			table {
-				background: white;
-				border-radius: 5px;
-			}
+		<style type="text/css">
+			body { background: #efefef; }
+			table { background: white; border-radius: 5px; }
+			.container h1 { display: inline-block; }
+			.btn-info { display: inline-block; margin: -18px 0 0 20px; }
+			.btn-success { display: inline-block; margin: -18px 0 0 10px; }
 		</style>
 		<script type="text/javascript">
 			$(function(){
+				$(".btn-info").click(function() {
+					$(this).next().click();
+				});
+				
 				$("input[type='file']").change(function() {
 					$.ajax({
 						type : "POST",
@@ -49,15 +50,30 @@
 						}
 					});
 				});
+				
+				$(".btn-success").click(function() {
+					$.ajax({
+						type : "POST",
+						url : "/clear",
+						data : { name : this.name },
+						success : function(data) {
+							window.location.reload();
+						},
+						error : function(XMLHttpRequest, textStatus, errorThrown) {
+							alert("清理失败，请检查网络后重试");
+						}
+					});
+				});
 			});
 		</script>
 	</head>
 	<body>
 		<div class="container">
-			<h1>Netty Server</h1>
 			<form method="post">
-				<button type="button" class="btn btn-info" onclick="$(this).next().click();">上传</button>
+				<h1>Netty Server</h1>
+				<button type="button" class="btn btn-info">上传</button>
 				<input type="file" name="file" class="hide" />
+				<button type="button" class="btn btn-success">清理</button>
 			</form>
 			<table class="table">
 				<tr>
@@ -72,11 +88,10 @@
 						#set($kb=$item.length()/1024)
 						$kb kb
 					</td>
-					<td>
-						<button class="btn btn-danger" name="$item.name">删除</button>
-					</td>
+					<td><button class="btn btn-danger" name="$item.name">删除</button></td>
 				</tr>
 				#end
 			</table>
+		</div>
 	</body>
 </html>
